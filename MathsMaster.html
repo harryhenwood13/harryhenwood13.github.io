@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MathsMaster</title>
+<style>
+  :root {
+    --bg: #0f1220;
+    --bg-soft:#171a2b;
+    --card:#1e233a;
+    --text:#eef2ff;
+    --muted:#a3b1d1;
+    --accent:#6ea8fe;
+    --accent-2:#a78bfa;
+    --good:#22c55e;
+    --bad:#ef4444;
+    --warn:#f59e0b;
+    --shadow: rgba(0,0,0,0.35);
+  }
+  [data-theme="light"]{
+    --bg:#f6f7fb; --bg-soft:#ffffff; --card:#ffffff; --text:#121629; --muted:#4b5568; --accent:#2563eb; --accent-2:#7c3aed; --good:#16a34a; --bad:#dc2626; --warn:#d97706; --shadow:rgba(0,0,0,0.12);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Apple Color Emoji,Segoe UI Emoji}
+  header{position:sticky;top:0;z-index:10;background:var(--bg-soft);box-shadow:0 2px 12px var(--shadow);}
+  .wrap{max-width:1100px;margin:0 auto;padding:12px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;color:white;font-weight:800;box-shadow:0 4px 14px var(--shadow)}
+  nav{display:flex;gap:8px;flex-wrap:wrap}
+  nav button{background:transparent;border:1px solid transparent;color:var(--text);padding:8px 12px;border-radius:8px;cursor:pointer}
+  nav button.active, nav button:hover{border-color:var(--accent);box-shadow:0 0 0 2px rgba(110,168,254,.25)}
+  main{max-width:1100px;margin:0 auto;padding:24px 16px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+  .card{background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:16px;box-shadow:0 10px 24px var(--shadow)}
+  .topic{display:flex;align-items:center;justify-content:space-between}
+  .topic h3{margin:0;font-size:16px}
+  .topic small{color:var(--muted)}
+  .topic button{padding:6px 10px;border-radius:8px;border:none;background:var(--accent);color:white;cursor:pointer}
+  .lock{opacity:.6}
+  .badge{font-size:12px;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.08);color:var(--muted)}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .spaced{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .panel{background:var(--card);border-radius:14px;padding:16px;box-shadow:0 10px 24px var(--shadow);border:1px solid rgba(255,255,255,.06)}
+  .muted{color:var(--muted)}
+  .btn{padding:10px 14px;border-radius:10px;border:none;background:var(--accent);color:white;cursor:pointer}
+  .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.15);color:var(--text)}
+  .btn.warn{background:var(--warn);color:#111}
+  .btn.good{background:var(--good)}
+  .btn.bad{background:var(--bad)}
+  .hidden{display:none}
+  /* Quiz */
+  .question{font-size:20px;margin:0 0 12px}
+  .options{display:grid;grid-template-columns:1fr;gap:10px}
+  .options button{padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:var(--bg-soft);color:var(--text);cursor:pointer;text-align:left}
+  .options button.correct{background:rgba(34,197,94,.2);border-color:var(--good)}
+  .options button.wrong{background:rgba(239,68,68,.2);border-color:var(--bad)}
+  .progress{height:8px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden}
+  .progress div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));width:0%}
+  .pill{padding:6px 10px;border:1px solid rgba(255,255,255,.12);border-radius:999px}
+  .two-col{display:grid;grid-template-columns:1fr 320px;gap:16px}
+  @media (max-width: 900px){.two-col{grid-template-columns:1fr}}
+  /* Ads */
+  #adBanner{position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,.5);backdrop-filter:blur(6px);padding:10px;z-index:20}
+  #adBanner .inner{max-width:1100px;margin:0 auto;background:var(--card);border:1px dashed rgba(255,255,255,.18);padding:8px 12px;border-radius:10px;display:flex;justify-content:space-between;align-items:center}
+  #adInterstitial{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:30}
+  #adInterstitial .box{background:var(--card);border:2px dashed rgba(255,255,255,.2);padding:20px;border-radius:14px;max-width:460px}
+  /* Tables */
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left}
+</style>
+</head>
+<body data-theme="dark">
+<header>
+  <div class="wrap">
+    <div class="brand">
+      <div class="logo">MM</div>
+      <div>
+        <div style="font-weight:800">MathsMaster</div>
+        <div class="muted" style="font-size:12px">GCSE Maths • quizzes, hints & challenges</div>
+      </div>
+    </div>
+    <nav>
+      <button id="tab-home" class="active" onclick="showView('home')">Home</button>
+      <button id="tab-quiz" onclick="showView('quiz')">Quiz</button>
+      <button id="tab-history" onclick="showView('history')">Review</button>
+      <button id="tab-settings" onclick="showView('settings')">Settings</button>
+      <button id="tab-premium" onclick="showView('premium')">Premium</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- HOME -->
+  <section id="view-home">
+    <div class="spaced" style="margin-bottom:12px">
+      <div>
+        <h2 style="margin:0">Choose a Topic</h2>
+        <div class="muted">Pick a topic to start a quick quiz. Free topics are unlocked; others require Premium.</div>
+      </div>
+      <div class="row">
+        <label class="pill">Difficulty:
+          <select id="difficulty" onchange="savePref('difficulty', this.value)">
+            <option value="mixed">Mixed</option>
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </label>
+        <label class="pill">Questions:
+          <select id="questionsCount" onchange="savePref('questions', this.value)">
+            <option>5</option><option selected>10</option><option>15</option><option>20</option>
+          </select>
+        </label>
+        <button class="btn ghost" onclick="showView('builder')">Custom Quiz Builder</button>
+      </div>
+    </div>
+
+    <div id="topicsGrid" class="grid"></div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="view-quiz" class="hidden">
+    <div class="two-col">
+      <div class="panel">
+        <div class="spaced">
+          <div class="row">
+            <span class="pill" id="quizTopic">Topic</span>
+            <span class="pill">Mode: <span id="quizMode">Standard</span></span>
+          </div>
+          <div class="row">
+            <span class="pill">⏱ <span id="timer">00:00</span></span>
+            <span class="pill">Score: <span id="score">0</span></span>
+          </div>
+        </div>
+        <div class="progress" style="margin:12px 0 16px"><div id="progressBar"></div></div>
+
+        <h3 class="question" id="questionText">Question text</h3>
+        <div id="options" class="options"></div>
+
+        <div class="row" style="margin-top:14px">
+          <button class="btn ghost" onclick="showHint()">💡 Hint</button>
+          <button class="btn" onclick="nextQuestion()">Next</button>
+        </div>
+      </div>
+
+      <aside>
+        <div class="panel">
+          <h3 style="margin-top:0">Challenge Mode</h3>
+          <p class="muted">Answer as many as you can in 60s. Premium removes ads and unlocks higher difficulties.</p>
+          <div class="row">
+            <button class="btn warn" onclick="startChallenge()">Start 60s</button>
+            <button class="btn ghost" onclick="endQuiz()">End Quiz</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3 style="margin-top:0">Hint</h3>
+          <div id="hintBox" class="muted">Use the 💡 Hint button during a question.</div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- PREMIUM -->
+  <section id="view-premium" class="hidden">
+    <div class="panel">
+      <h2 style="margin-top:0">Premium</h2>
+      <p class="muted">Unlock all topics, remove ads, enable advanced features and Challenge Mode Hard.</p>
+      <div class="row">
+        <button class="btn" onclick="buyPremium()">⭐ Upgrade £1.99 (simulated)</button>
+        <button class="btn ghost" onclick="revokePremium()">Revoke (test)</button>
+      </div>
+      <ul>
+        <li>All 14 topics unlocked</li>
+        <li>No ads (banner + interstitial)</li>
+        <li>Step-by-step Hints</li>
+        <li>Review Past Quizzes & stats</li>
+        <li>Challenge Mode Hard</li>
+        <li>Custom Quiz Builder</li>
+      </ul>
+      <div id="premiumState" class="badge">Status: Free</div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section id="view-settings" class="hidden">
+    <div class="panel">
+      <h2 style="margin-top:0">Settings</h2>
+      <div class="row">
+        <label class="pill">Theme:
+          <select id="themeSelect" onchange="setTheme(this.value)">
+            <option value="dark" selected>Dark</option>
+            <option value="light">Light</option>
+          </select>
+        </label>
+        <label class="pill">Sounds:
+          <select id="soundSelect" onchange="savePref('sound', this.value)">
+            <option value="on" selected>On</option>
+            <option value="off">Off</option>
+          </select>
+        </label>
+      </div>
+      <p class="muted">Your preferences are saved locally on this device.</p>
+    </div>
+  </section>
+
+  <!-- REVIEW -->
+  <section id="view-history" class="hidden">
+    <div class="panel">
+      <h2 style="margin-top:0">Review Past Quizzes</h2>
+      <table id="historyTable">
+        <thead><tr><th>Date</th><th>Topic(s)</th><th>Mode</th><th>Score</th><th>Time</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost" onclick="clearHistory()">Clear History</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- BUILDER -->
+  <section id="view-builder" class="hidden">
+    <div class="panel">
+      <h2 style="margin-top:0">Custom Quiz Builder</h2>
+      <div class="grid" id="builderTopics"></div>
+      <div class="row" style="margin-top:12px">
+        <label class="pill">Questions: <input id="builderCount" type="number" min="5" max="50" value="10" style="width:80px"></label>
+        <label class="pill">Difficulty:
+          <select id="builderDiff">
+            <option>mixed</option><option>easy</option><option>medium</option><option>hard</option>
+          </select>
+        </label>
+        <button class="btn" onclick="startCustomQuiz()">Start Custom Quiz</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- Ads -->
+<div id="adBanner" class="hidden">
+  <div class="inner">
+    <div>📢 <strong>Ad placeholder</strong> — Your ad could be here. (Hidden for Premium)</div>
+    <button class="btn ghost" onclick="hideBanner()">Close</button>
+  </div>
+</div>
+
+<div id="adInterstitial">
+  <div class="box">
+    <h3>Sponsored</h3>
+    <p class="muted">Interstitial ad placeholder. (Hidden for Premium)</p>
+    <div class="row">
+      <button class="btn" onclick="closeInterstitial()">Continue</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================
+   State & Preferences
+========================= */
+const store = {
+  get k(){ return JSON.parse(localStorage.getItem('mm_state')||'{}'); },
+  set k(v){ localStorage.setItem('mm_state', JSON.stringify(v)); },
+  get(key, def=null){ const s=this.k; return (key in s)? s[key]: def; },
+  set(key, val){ const s=this.k; s[key]=val; this.k=s; },
+  del(key){ const s=this.k; delete s[key]; this.k=s; }
+};
+let isPremium = !!store.get('premium', false);
+let prefs = {
+  theme: store.get('theme','dark'),
+  sound: store.get('sound','on'),
+  difficulty: store.get('difficulty','mixed'),
+  questions: parseInt(store.get('questions', '10'),10)
+};
+
+/* =========================
+   Views / Navigation
+========================= */
+function showView(view){
+  const ids=['home','quiz','history','settings','premium','builder'];
+  ids.forEach(v=>{
+    document.getElementById('view-'+v).classList.add('hidden');
+    document.getElementById('tab-'+(v==='builder'?'home':v)).classList?.remove('active');
+  });
+  document.getElementById('view-'+view).classList.remove('hidden');
+  const mapTab = {home:'home', quiz:'quiz', history:'history', settings:'settings', premium:'premium'};
+  if(mapTab[view]) document.getElementById('tab-'+mapTab[view]).classList.add('active');
+  if(view==='home') renderTopics();
+  if(view==='history') renderHistory();
+  if(view==='premium') updatePremiumBadge();
+  if(view==='builder') renderBuilder();
+}
+
+/* =========================
+   Theme & Prefs
+========================= */
+function setTheme(v){
+  document.body.setAttribute('data-theme', v);
+  store.set('theme', v);
+  document.getElementById('themeSelect').value=v;
+}
+function savePref(k,v){
+  store.set(k,v);
+  if(k==='sound') prefs.sound=v;
+  if(k==='difficulty') prefs.difficulty=v;
+  if(k==='questions'){ prefs.questions=parseInt(v,10); }
+}
+setTheme(prefs.theme);
+document.addEventListener('DOMContentLoaded', ()=>{
+  document.getElementById('soundSelect').value=prefs.sound;
+  document.getElementById('difficulty').value=prefs.difficulty;
+  document.getElementById('questionsCount').value=prefs.questions;
+  updatePremiumBadge();
+  renderTopics();
+});
+/* =========================
+   Topics & Question Bank
+   We'll generate 25 Qs per topic algorithmically.
+========================= */
+const topics = [
+  'algebra','geometry','surds','probability','fractions','perimeter','area','mean',
+  'pythagoras','trigonometry','simultaneous','similar','speed','constructions'
+];
+// Helpers
+function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+function shuffle(arr){ return arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(p=>p[1]); }
+function fmtTime(sec){ const m=Math.floor(sec/60), s=sec%60; return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
+// Option builder
+function mcq(correct, wrongs){
+  const arr = shuffle([correct, ...wrongs.slice(0,3)]);
+  return {options:arr, answer:arr.indexOf(correct)};
+}
+// Generators (return array of 25 {q,options[],answer,hint,diff})
+function genAlgebra(diff){
+  const out=[];
+  for(let i=0;i<25;i++){
+    const a=rand(1,9), b=rand(1,12), c=rand(5,30);
+    const x=(c-b)/a;
+    const q=`Solve: ${a}x + ${b} = ${c}`;
+    const correct=`x=${x}`;
+    const wrongs=[`x=${x+rand(1,3)}`,`x=${x-1}`,`x=${x+a}`];
+    const {options,answer}=mcq(correct,wrongs);
+    out.push({q, options, answer, hint:`Rearrange: ${a}x = ${c}-${b} ⇒ x = ${(c-b)}/${a}`, diff});
+  }
+  return out;
+}
+function genGeometry(diff){
+  const out=[];
+  for(let i=0;i<13;i++){
+    const b=rand(5,20), h=rand(3,15);
+    const area=0.5*b*h;
+    const q=`Triangle base ${b}cm, height ${h}cm. Area = ?`;
+    const {options,answer}=mcq(`${area}cm²`, [`${b*h}cm²`, `${b+h}cm²`, `${(b*h)/4}cm²`]);
+    out.push({q,options,answer,hint:`Area(triangle)=1/2×base×height`,diff});
+  }
+  for(let i=0;i<12;i++){
+    const w=rand(4,20), h=rand(4,20);
+    const peri=2*(w+h);
+    const q=`Rectangle ${w}×${h} cm. Perimeter = ?`;
+    const {options,answer}=mcq(`${peri}cm`, [`${w*h}cm`, `${w+h}cm`, `${2*w*h}cm`]);
+    out.push({q,options,answer,hint:`Perimeter=2(l+w)`,diff});
+  }
+  return out;
+}
+function genSurds(diff){
+  const out=[];
+  for(let i=0;i<25;i++){
+    // choose n = k^2 * m
+    const k=rand(2,6);
+    const m=[2,3,5,6,7,10,11][rand(0,6)];
+    const n=k*k*m;
+    const q=`Simplify √${n}`;
+    const correct=`${k}√${m}`;
+    const {options,answer}=mcq(correct,[`${k*m}√${m}`,`${k-1}√${m}`,`√${n}`]);
+    out.push({q,options,answer,hint:`Factor ${n} = ${k}²×${m} ⇒ √${n} = ${k}√${m}`,diff});
+  }
+  return out;
+}
+function genProbability(diff){
+  const out=[];
+  for(let i=0;i<12;i++){
+    const q=`Fair dice: P(rolling a 6) = ?`;
+    const {options,answer}=mcq(`1/6`,[`1/3`,`1/2`,`1/12`]);
+    out.push({q,options,answer,hint:`Six equally likely outcomes`,diff});
+  }
+  for(let i=0;i<13;i++){
+    const q=`Two coin tosses: P(exactly one head) = ?`;
+    const {options,answer}=mcq(`1/2`,[`1/4`,`3/4`,`1/3`]);
+    out.push({q,options,answer,hint:`Outcomes: HH, HT, TH, TT → HT or TH = 2/4`,diff});
+  }
+  return out;
+}
+function genFractions(diff){
+  const out=[];
+  for(let i=0;i<13;i++){
+    const a=rand(2,12), b=rand(2,12);
+    const num=a, den=b;
+    const g=(x,y)=>y?g(y,x%y):x;
+    const d=g(num,den);
+    const q=`Simplify ${num}/${den}`;
+    const correct=`${num/d}/${den/d}`;
+    const {options,answer}=mcq(correct,[`${num}/${den}`,`${den}/${num}`,`${(num+d)}/${(den)}`]);
+    out.push({q,options,answer,hint:`Divide by gcd(${num},${den})=${d}`,diff});
+  }
+  for(let i=0;i<12;i++){
+    const a=rand(1,9), b=rand(2,9), c=rand(1,9), d=rand(2,9);
+    const num=a*d + c*b, den=b*d;
+    const g=(x,y)=>y?g(y,x%y):x;
+    const div=g(num,den);
+    const q=`${a}/${b} + ${c}/${d} = ? (simplest form)`;
+    const correct=`${num/div}/${den/div}`;
+    const {options,answer}=mcq(correct,[`${num}/${den}`,`${a+c}/${b+d}`,`${(num/div)+1}/${den/div}`]);
+    out.push({q,options,answer,hint:`LCD=${b*d}. Add numerators, then simplify by gcd=${div}.`,diff});
+  }
+  return out;
+}
+function genPerimeter(diff){
+  const out=[];
+  for(let i=0;i<25;i++){
+    const s=rand(3,20);
+    const q=`Square side ${s}cm. Perimeter = ?`;
+    const {options,answer}=mcq(`${4*s}cm`, [`${s*s}cm`,`${2*s}cm`,`${s+4}cm`]);
+    out.push({q,options,answer,hint:`Perimeter(square)=4s`,diff});
+  }
+  return out;
+}
+function genArea(diff){
+  const out=[];
+  for(let i=0;i<13;i++){
+    const r=rand(3,15);
+    const area=(Math.PI*r*r).toFixed(1);
+    const q=`Circle radius ${r}cm. Area ≈ ?`;
+    const {options,answer}=mcq(`${area}cm²`, [`${(2*Math.PI*r).toFixed(1)}cm²`,`${
+      (Math.PI*r).toFixed(1)}cm²`,`${(r*r).toFixed(1)}cm²`]);
+    out.push({q,options,answer,hint:`Area=πr²`,diff});
+  }
+  for(let i=0;i<12;i++){
+    const b=rand(4,20), h=rand(4,20);
+    const q=`Parallelogram base ${b}cm, height ${h}cm. Area = ?`;
+    const {options,answer}=mcq(`${b*h}cm²`, [`${b+h}cm²`,`${
+      0.5*b*h}cm²`,`${
+      2*(b+h)}cm²`]);
+    out.push({q,options,answer,hint:`Area=base×height`,diff});
+  }
+  return out;
+}
+function genMean(diff){
+  const out=[];
+  for(let i=0;i<25;i++){
+    const n=5, arr=Array.from({length:n},()=>rand(1,20));
+    const sum=arr.reduce((a,b)=>a+b,0);
+    const mean=(sum/n).toFixed(1);
+    const q=`Find the mean of [${arr.join(', ')}]`;
+    const {options,answer}=mcq(`${mean}`, [`${sum}`, `${(sum/(n-1)).toFixed(1)}`, `${(sum/(n+1)).toFixed(1)}`]);
+    out.push({q,options,answer,hint:`Mean = total ÷ number = ${sum} ÷ ${n}`,diff});
+  }
+  return out;
+}
+function genPythagoras(diff){
+  const out=[];
+  for(let i=0;i<12;i++){
+    const a=3*rand(1,6), b=4*rand(1,6), c=Math.sqrt(a*a+b*b).toFixed(1);
+    const q=`Right triangle with legs ${a}cm and ${b}cm. Hypotenuse ≈ ?`;
+    const {options,answer}=mcq(`${c}cm`, [`${(a+b).toFixed(1)}cm`, `${(Math.abs(a-b)).toFixed(1)}cm`, `${(a*a+b*b)}cm`]);
+    out.push({q,options,answer,hint:`c = √(a²+b²)`,diff});
+  }
+  for(let i=0;i<13;i++){
+    const c=5*rand(2,6), a=3*rand(1,6); const b=Math.sqrt(c*c-a*a).toFixed(1);
+    const q=`Right triangle hypotenuse ${c}cm and leg ${a}cm. Other leg ≈ ?`;
+    const {options,answer}=mcq(`${b}cm`, [`${(c-a).toFixed(1)}cm`, `${(a+c).toFixed(1)}cm`, `${(c*c-a*a)}cm`]);
+    out.push({q,options,answer,hint:`b = √(c²-a²)`,diff});
+  }
+  return out;
+}
+function genTrig(diff){
+  const out=[];
+  const table=[{t:'sin(30°)',v:'0.5'},{t:'cos(60°)',v:'0.5'},{t:'sin(0°)',v:'0'},{t:'cos(0°)',v:'1'},{t:'sin(90°)',v:'1'},{t:'cos(90°)',v:'0'},{t:'tan(45°)',v:'1'}];
+  for(let i=0;i<25;i++){
+    const pick=table[rand(0,table.length-1)];
+    const q=`${pick.t} = ?`;
+    const wrongs=shuffle(['0','0.5','0.707','0.866','1']).filter(x=>x!==pick.v);
+    const {options,answer}=mcq(pick.v,wrongs);
+    out.push({q,options,answer,hint:`Special angles table.`,diff});
+  }
+  return out;
+}
+function genSimultaneous(diff){
+  const out=[];
+  for(let i=0;i<25;i++){
+    const x=rand(1,9), y=rand(1,9);
+    // equations: x+y = s, x-y = d
+    const s=x+y, d=x-y;
+    const q=`Solve: x + y = ${s},  x − y = ${d}. What is x?`;
+    const correct=`${(s+d)/2}`;
+    const {options,answer}=mcq(correct,[`${(s-d)/2}`,`${s}`,`${d}`]);
+    out.push({q,options,answer,hint:`Add equations: 2x=${s+d} ⇒ x=${(s+d)/2}`,diff});
+  }
+  return out;
+}
+function genSimilar(diff){
+  const out=[];
+  for(let i=0;i<25;i++){
+    const sf=rand(2,5), small=rand(3,12);
+    const big=sf*small;
+    const q=`Two similar shapes with scale factor ${sf}. Small length ${small}cm. Big length = ?`;
+    const {options,answer}=mcq(`${big}cm`, [`${small/sf}cm`,`${
+      small}cm`,`${
+      big+sf}cm`]);
+    out.push({q,options,answer,hint:`Linear dims × SF`,diff});
+  }
+  return out;
+}
+function genSpeed(diff){
+  const out=[];
+  for(let i=0;i<25;i++){
+    const d=rand(20,200), t=rand(1,5);
+    const v=d/t;
+    const q=`Distance ${d} km in ${t} h. Average speed = ?`;
+    const {options,answer}=mcq(`${v} km/h`, [`${d*t} km/h`,`${
+      d+t} km/h`,`${
+      (d/(t+1)).toFixed(1)} km/h`]);
+    out.push({q,options,answer,hint:`Speed = distance ÷ time`,diff});
+  }
+  return out;
+}
+function genConstructions(diff){
+  const out=[];
+  for(let i=0;i<25;i++){
+    const angle=rand(30,150);
+    const q=`Using compass & straightedge: what is the first step to bisect a ${angle}° angle?`;
+    const {options,answer}=mcq(`Draw an arc from the vertex cutting both rays`,[`Draw a perpendicular line anywhere`,`Measure with protractor`,`Erase one ray`]);
+    out.push({q,options,answer,hint:`Place compass at vertex, draw an arc crossing both sides, then arcs from those points.`,diff});
+  }
+  return out;
+}
+function generateBank(){
+  // difficulty currently informational; pools are same size
+  return {
+    algebra: genAlgebra('mixed'),
+    geometry: genGeometry('mixed'),
+    surds: genSurds('mixed'),
+    probability: genProbability('mixed'),
+    fractions: genFractions('mixed'),
+    perimeter: genPerimeter('mixed'),
+    area: genArea('mixed'),
+    mean: genMean('mixed'),
+    pythagoras: genPythagoras('mixed'),
+    trigonometry: genTrig('mixed'),
+    simultaneous: genSimultaneous('mixed'),
+    similar: genSimilar('mixed'),
+    speed: genSpeed('mixed'),
+    constructions: genConstructions('mixed')
+  };
+}
+let questionBank = generateBank();
+
+/* =========================
+   Render Topics (locks & ads)
+========================= */
+const freeTopics = ['algebra','geometry','surds']; // rest are premium
+function renderTopics(){
+  const grid=document.getElementById('topicsGrid');
+  grid.innerHTML='';
+  topics.forEach(t=>{
+    const locked = !isPremium && !freeTopics.includes(t);
+    const el=document.createElement('div');
+    el.className='card topic'+(locked?' lock':'');
+    el.innerHTML=`
+      <div>
+        <h3 style="text-transform:capitalize;margin-bottom:6px">${t.replace(/_/g,' ')}</h3>
+        <div class="muted">25 questions • ${locked?'Premium':'Free'}</div>
+      </div>
+      <div class="row">
+        ${locked?'<span class="badge">🔒</span>':''}
+        <button ${locked?'disabled':''} onclick="startQuiz(t='${t}')">${locked?'Locked':'Start'}</button>
+      </div>
+    `;
+    grid.appendChild(el);
+  });
+  // Ads banner
+  if(!isPremium) document.getElementById('adBanner').classList.remove('hidden');
+  else document.getElementById('adBanner').classList.add('hidden');
+}
+
+/* =========================
+   Quiz Engine
+========================= */
+let active = { topic:null, list:[], i:0, score:0, mode:'Standard', startedAt:null, timer:null, seconds:0 };
+function startQuiz(t){
+  showView('quiz');
+  const diff = (document.getElementById('builderDiff')?.value) || prefs.difficulty;
+  const total = (document.getElementById('builderCount')?.value) ? parseInt(document.getElementById('builderCount').value,10) : prefs.questions;
+  const pool = questionBank[t].slice(); // shallow copy
+  const list = shuffle(pool).slice(0,total);
+  active = { topic:t, list, i:0, score:0, mode:'Standard', startedAt:new Date(), timer:null, seconds:0 };
+  document.getElementById('quizTopic').textContent = t;
+  document.getElementById('quizMode').textContent = active.mode;
+  document.getElementById('score').textContent = '0';
+  document.getElementById('progressBar').style.width='0%';
+  document.getElementById('hintBox').textContent = 'Use the 💡 Hint button during a question.';
+  loadQuestion();
+  startTimer();
+}
+function startTimer(){
+  if(active.timer) clearInterval(active.timer);
+  active.seconds=0;
+  document.getElementById('timer').textContent=fmtTime(active.seconds);
+  active.timer=setInterval(()=>{
+    active.seconds++;
+    document.getElementById('timer').textContent=fmtTime(active.seconds);
+  },1000);
+}
+function loadQuestion(){
+  const q = active.list[active.i];
+  document.getElementById('questionText').textContent = `Q${active.i+1}. ${q.q}`;
+  const options = document.getElementById('options');
+  options.innerHTML='';
+  q.options.forEach((opt,idx)=>{
+    const btn=document.createElement('button');
+    btn.textContent = opt;
+    btn.onclick=()=>selectOption(idx, btn);
+    options.appendChild(btn);
+  });
+  // Interstitial ad occasionally for free users
+  if(!isPremium && active.i>0 && active.i%5===0){ showInterstitial(); }
+  updateProgress();
+}
+function updateProgress(){
+  const pct = ((active.i)/active.list.length)*100;
+  document.getElementById('progressBar').style.width = pct+'%';
+}
+function selectOption(idx, btn){
+  const options=[...document.getElementById('options').children];
+  options.forEach(b=>b.disabled=true);
+  const q=active.list[active.i];
+  if(idx===q.answer){ btn.classList.add('correct'); active.score++; play('good'); }
+  else { btn.classList.add('wrong'); options[q.answer].classList.add('correct'); play('bad'); }
+  document.getElementById('score').textContent = active.score;
+}
+function nextQuestion(){
+  if(active.i < active.list.length-1){ active.i++; loadQuestion(); }
+  else { finishQuiz(); }
+}
+function showHint(){
+  const q=active.list[active.i];
+  if(isPremium){ document.getElementById('hintBox').textContent = q.hint || 'Think about the formula involved.'; }
+  else { document.getElementById('hintBox').textContent = '🔒 Premium required for step-by-step hints.'; }
+}
+function finishQuiz(){
+  clearInterval(active.timer);
+  const time = fmtTime(active.seconds);
+  const score = `${active.score}/${active.list.length}`;
+  saveHistory({date:new Date().toLocaleString(), topics:active.topic, mode:active.mode, score, time});
+  alert(`Quiz Complete!\nScore: ${score}\nTime: ${time}`);
+  showView('history');
+}
+function endQuiz(){
+  if(confirm('End current quiz? Progress will be lost.')){
+    clearInterval(active.timer); showView('home');
+  }
+}
+
+/* =========================
+   Challenge Mode
+========================= */
+function startChallenge(){
+  active.mode='Challenge';
+  document.getElementById('quizMode').textContent = active.mode;
+  const t = active.topic || 'algebra';
+  const pool = shuffle(questionBank[t]);
+  active.list = pool.slice(0,50);
+  active.i=0; active.score=0;
+  loadQuestion();
+  let s=60;
+  if(active.timer) clearInterval(active.timer);
+  document.getElementById('timer').textContent = fmtTime(s);
+  active.timer=setInterval(()=>{
+    s--; document.getElementById('timer').textContent = fmtTime(s);
+    if(s<=0){ clearInterval(active.timer); finishQuiz(); }
+  },1000);
+}
+
+/* =========================
+   Sounds
+========================= */
+function play(kind){
+  if(store.get('sound','on')==='off') return;
+  const ctx = play.ctx || (play.ctx=new (window.AudioContext||window.webkitAudioContext)());
+  const o = ctx.createOscillator(); const g=ctx.createGain();
+  o.connect(g); g.connect(ctx.destination);
+  o.frequency.value = kind==='good'? 880 : 220;
+  g.gain.value=0.001; g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime+0.01);
+  o.start(); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.2); o.stop(ctx.currentTime+0.21);
+}
+
+/* =========================
+   Premium
+========================= */
+function updatePremiumBadge(){
+  document.getElementById('premiumState').textContent = 'Status: ' + (isPremium?'Premium':'Free');
+  if(isPremium){ document.getElementById('adBanner').classList.add('hidden'); }
+}
+function buyPremium(){
+  if(confirm('Confirm £1.99 (simulation) to unlock all topics, remove ads, and enable Premium features?')){
+    isPremium=true; store.set('premium',true);
+    updatePremiumBadge(); renderTopics();
+    alert('🎉 Premium activated!');
+  }
+}
+function revokePremium(){ isPremium=false; store.del('premium'); updatePremiumBadge(); renderTopics(); }
+
+/* =========================
+   Ads
+========================= */
+function hideBanner(){ document.getElementById('adBanner').classList.add('hidden'); }
+function showInterstitial(){ const el=document.getElementById('adInterstitial'); if(!isPremium){ el.style.display='flex'; } }
+function closeInterstitial(){ document.getElementById('adInterstitial').style.display='none'; }
+
+/* =========================
+   History
+========================= */
+function saveHistory(rec){
+  const arr = JSON.parse(localStorage.getItem('mm_history')||'[]');
+  arr.unshift(rec); localStorage.setItem('mm_history', JSON.stringify(arr.slice(0,200)));
+}
+function renderHistory(){
+  const tbody=document.querySelector('#historyTable tbody'); tbody.innerHTML='';
+  const arr = JSON.parse(localStorage.getItem('mm_history')||'[]');
+  if(arr.length===0){
+    const tr=document.createElement('tr'); tr.innerHTML='<td colspan="5" class="muted">No history yet. Play a quiz!</td>'; tbody.appendChild(tr); return;
+  }
+  arr.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td>${r.date}</td><td>${r.topics}</td><td>${r.mode}</td><td>${r.score}</td><td>${r.time}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+function clearHistory(){ if(confirm('Clear all history?')){ localStorage.removeItem('mm_history'); renderHistory(); } }
+
+/* =========================
+   Custom Builder
+========================= */
+function renderBuilder(){
+  const cont=document.getElementById('builderTopics'); cont.innerHTML='';
+  topics.forEach(t=>{
+    const div=document.createElement('div'); div.className='card';
+    div.innerHTML=`<label><input type="checkbox" value="${t}" ${freeTopics.includes(t)?'checked':''}> <strong style="text-transform:capitalize">${t}</strong> <span class="badge">${isPremium?'':'🔒 if locked'}</span></label>`;
+    cont.appendChild(div);
+  });
+}
+function startCustomQuiz(){
+  const boxes=[...document.querySelectorAll('#builderTopics input[type=checkbox]:checked')];
+  const list=boxes.map(b=>b.value);
+  if(list.length===0) return alert('Choose at least one topic');
+  if(!isPremium && list.some(t=>!freeTopics.includes(t))) return alert('Custom builder requires Premium for locked topics.');
+  // Build merged pool
+  let pool=[]; list.forEach(t=>pool=pool.concat(questionBank[t]));
+  const total = parseInt(document.getElementById('builderCount').value,10);
+  active = { topic:list.join(','), list: shuffle(pool).slice(0,total), i:0, score:0, mode:'Custom', startedAt:new Date(), timer:null, seconds:0 };
+  showView('quiz'); document.getElementById('quizTopic').textContent = list.join(', ');
+  document.getElementById('quizMode').textContent = active.mode;
+  document.getElementById('score').textContent='0';
+  document.getElementById('hintBox').textContent='Use the 💡 Hint button during a question.';
+  loadQuestion(); startTimer();
+}
+</script>
+</body>
+</html>
